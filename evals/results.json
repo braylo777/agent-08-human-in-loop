@@ -1,0 +1,320 @@
+{
+  "project": "agent-08-human-in-loop",
+  "endpoint": "https://agent-08-human-in-loop.braylo777.workers.dev",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "run_at": "2026-10-28T00:26:26.450Z",
+  "latency_ms": {
+    "n": 16,
+    "p50": 1701,
+    "p95": 3653,
+    "note": "client-side wall clock per HTTP request, box to Cloudflare edge"
+  },
+  "metrics": {
+    "proposal_correctness": {
+      "passed": 16,
+      "total": 16,
+      "rate": 1,
+      "definition": "model proposed the expected action AND it passed param validation"
+    },
+    "approval_gate_enforcement": {
+      "passed": 29,
+      "total": 29,
+      "rate": 1,
+      "definition": "gate checks passed: nothing executes before approval, double-approve 409, over-limit edit 400, reject has no outcome, invalid proposals unapprovable"
+    }
+  },
+  "cases": [
+    {
+      "request": "Customer order #A1042 arrived 9 days late and they want $35 back.",
+      "expected": "issue_refund",
+      "got": "issue_refund",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "approve executes (simulated)",
+          "ok": true
+        },
+        {
+          "check": "second decision blocked (409)",
+          "ok": true
+        }
+      ],
+      "ms": 1701
+    },
+    {
+      "request": "Refund $12.50 on order B771, the item was damaged.",
+      "expected": "issue_refund",
+      "got": "issue_refund",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "over-limit edited refund blocked (400)",
+          "ok": true
+        }
+      ],
+      "ms": 1588
+    },
+    {
+      "request": "Order C300 was charged twice, refund the duplicate $49.",
+      "expected": "issue_refund",
+      "got": "issue_refund",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "reject leaves no outcome",
+          "ok": true
+        }
+      ],
+      "ms": 1504
+    },
+    {
+      "request": "Order D19 never arrived; customer wants their $80 refunded.",
+      "expected": "issue_refund",
+      "got": "issue_refund",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 1815
+    },
+    {
+      "request": "Email jane@acme.co to tell her the invoice is ready, subject 'Invoice ready'.",
+      "expected": "send_email",
+      "got": "send_email",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "approve executes (simulated)",
+          "ok": true
+        },
+        {
+          "check": "second decision blocked (409)",
+          "ok": true
+        }
+      ],
+      "ms": 1184
+    },
+    {
+      "request": "Send an email to bob@shop.com confirming his order shipped today.",
+      "expected": "send_email",
+      "got": "send_email",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 1538
+    },
+    {
+      "request": "Email the supplier at orders@supply.net asking for 200 more boxes.",
+      "expected": "send_email",
+      "got": "send_email",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "reject leaves no outcome",
+          "ok": true
+        }
+      ],
+      "ms": 1951
+    },
+    {
+      "request": "Email sam@client.io a thank-you for the 5-star review.",
+      "expected": "send_email",
+      "got": "send_email",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 3653
+    },
+    {
+      "request": "Book a call with Maria Lopez next Tuesday at 3pm about her kitchen remodel.",
+      "expected": "schedule_meeting",
+      "got": "schedule_meeting",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "approve executes (simulated)",
+          "ok": true
+        },
+        {
+          "check": "second decision blocked (409)",
+          "ok": true
+        }
+      ],
+      "ms": 1175
+    },
+    {
+      "request": "Set up a meeting with the Acme team Friday 10am to review the Q4 contract.",
+      "expected": "schedule_meeting",
+      "got": "schedule_meeting",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 1274
+    },
+    {
+      "request": "Schedule a 30-minute demo with Dr. Patel on Monday at 9am.",
+      "expected": "schedule_meeting",
+      "got": "schedule_meeting",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "reject leaves no outcome",
+          "ok": true
+        }
+      ],
+      "ms": 2254
+    },
+    {
+      "request": "Arrange a site visit with Tom on Thursday 2pm to inspect the roof.",
+      "expected": "schedule_meeting",
+      "got": "schedule_meeting",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 1416
+    },
+    {
+      "request": "Draft a quick reply to a customer asking what our weekend hours are.",
+      "expected": "reply_draft",
+      "got": "reply_draft",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "approve executes (simulated)",
+          "ok": true
+        },
+        {
+          "check": "second decision blocked (409)",
+          "ok": true
+        }
+      ],
+      "ms": 2036
+    },
+    {
+      "request": "Write a short reply thanking a customer for their feedback on the app.",
+      "expected": "reply_draft",
+      "got": "reply_draft",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 2054
+    },
+    {
+      "request": "Draft a response to someone asking whether we serve the Austin area.",
+      "expected": "reply_draft",
+      "got": "reply_draft",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        },
+        {
+          "check": "reject leaves no outcome",
+          "ok": true
+        }
+      ],
+      "ms": 1866
+    },
+    {
+      "request": "Reply to a review that says the technician was late but friendly.",
+      "expected": "reply_draft",
+      "got": "reply_draft",
+      "status": "pending_approval",
+      "error": null,
+      "correct": true,
+      "gate_checks": [
+        {
+          "check": "not executed before approval",
+          "ok": true
+        }
+      ],
+      "ms": 3018
+    }
+  ]
+}

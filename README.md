@@ -1,36 +1,51 @@
 # agent-08-human-in-loop
 
-A **human-in-the-loop** AI agent: it proposes actions but cannot execute anything until a person approves, edits or rejects the proposal. It runs serverless on Cloudflare Workers with the free Workers AI tier and KV. Project 8 of a 10-part agentic AI portfolio.
+**Human-in-the-Loop Agent: propose, approve, audit**
 
 **Live demo:** https://agent-08-human-in-loop.braylo777.workers.dev
 
+![Demo screenshot](docs/screenshot.png)
+
 ## What it is
-Describe a customer-ops request. The agent picks one action from a fixed catalog (`send_email`, `issue_refund`, `schedule_meeting`, `reply_draft`), fills in the parameters, and parks it as `pending_approval` with a risk level. A human then approves it (optionally with edited params), or rejects it with a note. Every event is written to an audit trail. **Execution is simulated**: the demo records what would happen and never sends or pays anything.
+An operations agent that may only *propose* actions (send email, issue refund, schedule meeting, draft reply). Nothing executes until a human approves, edits-then-approves, or rejects it, and every decision is audited. Project 8 of a 10-part agentic AI portfolio. Execution is simulated: nothing is really sent or paid.
+
+## Architecture
+```mermaid
+flowchart LR
+  R[POST /api/propose] --> L[LLM proposes ONE action] --> V{validate params<br/>refund ≤ $500}
+  V -- invalid --> I[(status: invalid)]
+  V -- ok --> P[(pending_approval)]
+  P -- approve / edit+approve --> X[simulated execute] --> A[(executed + audit)]
+  P -- reject --> J[(rejected + audit)]
+  A & J -- any further decision --> C[409 conflict]
+```
 
 ## How it works
-```
-request ─▶ LLM proposes {action, params, rationale}
-              │ validate (catalog, required params, refund ≤ $500)
-              ▼
-         pending_approval (KV) ──human──▶ approve / edit+approve / reject
-                                              │
-                                    simulated execute + audit log
-```
-- `src/hitl.js`: action catalog with risk levels, the validator, propose/decide and the audit trail.
-- Safety by design: the model can't call the executor. Only `/api/decide` can, once per action (a second decision returns 409), and edited params are re-validated.
-- Guardrails: 5 requests/min per IP, 500-char cap, 3-day expiry.
+- `src/hitl.js`: action catalog with risk levels, schema validation, propose/decide state machine (only `pending_approval` can change), audit trail.
+- Edited params are re-validated, so a human edit can't push a refund over the limit.
+- `src/index.js`: `/api/propose`, `/api/decide`, `/api/actions/:id`, `/api/catalog`.
+- Runs serverless on Cloudflare Workers with the free Workers AI tier (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`); 5 requests/min per IP keeps the demo free.
+
+## Eval results
+Measured against the **live** deployment with real model calls (`node evals/run.mjs`), run 2026-10-28. Raw per-case output: [`evals/results.json`](evals/results.json). Small sample sizes, kept small to stay inside the free daily model quota, so read these as indicative, not definitive.
+
+| Metric | Result |
+|---|---|
+| Proposal correctness (expected action + valid params) | 16/16 (100%) |
+| Approval-gate enforcement (gate checks passed) | 29/29 (100%) |
+| Latency p50 / p95 (end-to-end HTTP) | 1701 ms / 3653 ms (n=16) |
+
+## Tests
+12/12 unit tests pass (`npm test`, Node 20+, the LLM is mocked so they run offline).
 
 ## Run it
 ```bash
 npm install
-npm test            # offline unit tests (Node 20+), LLM is mocked
-npx wrangler dev    # local; Workers AI runs via your Cloudflare login
-npx wrangler deploy # free tier, no paid API keys
+npm test               # offline unit tests
+node evals/run.mjs     # live evals (BASE=http://localhost:8787 for local)
+npx wrangler dev       # local; Workers AI via your Cloudflare login
+npx wrangler deploy    # free tier, no paid API keys
 ```
-`wrangler.toml` needs your KV namespace id first: `npx wrangler kv namespace create KV`.
-
-## Stack
-Cloudflare Workers · Workers AI (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`, Workers KV) · vanilla JS · node:test
 
 ## License
 MIT
