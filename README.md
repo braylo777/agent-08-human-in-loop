@@ -21,13 +21,13 @@ flowchart LR
 ```
 
 ## How it works
-- `src/hitl.js`: action catalog with risk levels, schema validation, propose/decide state machine (only `pending_approval` can change), audit trail.
+- `src/agent08/hitl.py` and `worker/src/hitl.rs`: action catalog with risk levels, schema validation, propose/decide state machine (only `pending_approval` can change), audit trail.
 - Edited params are re-validated, so a human edit can't push a refund over the limit.
-- `src/index.js`: `/api/propose`, `/api/decide`, `/api/actions/:id`, `/api/catalog`.
+- `worker/src/hitl.rs` (router) and `worker/src/worker_entry.rs`: `/api/propose`, `/api/decide`, `/api/actions/:id`, `/api/catalog`.
 - Runs serverless on Cloudflare Workers with the free Workers AI tier (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`); 5 requests/min per IP keeps the demo free.
 
 ## Eval results
-Measured against the **live** deployment with real model calls (`node evals/run.mjs`), run 2026-10-27 19:26 CT. Raw per-case output: [`evals/results.json`](evals/results.json). Small sample sizes, kept small to stay inside the free daily model quota, so read these as indicative, not definitive.
+Measured against the **live** deployment with real model calls (`python3 evals/run.py`), run 2026-10-27 19:26 CT. Raw per-case output: [`evals/results.json`](evals/results.json). Small sample sizes, kept small to stay inside the free daily model quota, so read these as indicative, not definitive.
 
 | Metric | Result |
 |---|---|
@@ -36,16 +36,19 @@ Measured against the **live** deployment with real model calls (`node evals/run.
 | Latency p50 / p95 (end-to-end HTTP) | 1701 ms / 3653 ms (n=16) |
 
 ## Tests
-12/12 unit tests pass (`npm test`, Node 20+, the LLM is mocked so they run offline).
+Python: 12 tests pass; Rust: 5 test functions pass (the LLM and KV are mocked, so they run offline). 60 propose-then-decide combinations (12 model outputs x 5 decisions) give identical proposals, outcomes, audit trails and errors for the old JavaScript, the Python and the Rust code.
 
 ## Run it
 ```bash
-npm install
-npm test               # offline unit tests
-node evals/run.mjs     # live evals (BASE=http://localhost:8787 for local)
-npx wrangler dev       # local; Workers AI via your Cloudflare login
-npx wrangler deploy    # free tier, no paid API keys
+python3 -m pytest                      # Python tests
+cd worker && cargo test                # Rust tests
+cd worker && worker-build --release    # build the Worker (wasm)
+BASE=http://localhost:8787 python3 evals/run.py   # live evals
+wrangler dev                           # local; Workers AI via your Cloudflare login
+wrangler deploy                        # free tier, no paid API keys
 ```
+
+The previous JavaScript version is on the `legacy-js` branch and the `pre-pycrust` tag.
 
 ## License
 MIT
